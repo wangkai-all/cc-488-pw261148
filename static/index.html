@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>业务改版前后对照分析</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="page-header">
+  <h1>业务改版前后对照分析</h1>
+  <p class="subtitle">分层 · 匹配窗口 · 同期对照 · 缺失期处理 · 影响范围与证据链</p>
+</header>
+
+<!-- 全局筛选行：一次运行的全部参数 -->
+<section class="card" id="controls-card">
+  <h2>分析参数</h2>
+  <form id="run-form" class="controls-row">
+    <label>数据版本
+      <select id="f-data-version" name="data_version"></select>
+    </label>
+    <label>指标
+      <select id="f-metric" name="metric">
+        <option value="gmv" selected>gmv（成交额）</option>
+        <option value="orders">orders（订单量）</option>
+        <option value="users">users（活跃用户）</option>
+      </select>
+    </label>
+    <label>上线日
+      <input type="date" id="f-revamp" name="revamp_date" value="2026-09-01" required>
+    </label>
+    <label>pre 天数
+      <input type="number" id="f-pre" name="pre_days" value="28" min="7" max="120">
+    </label>
+    <label>post 天数
+      <input type="number" id="f-post" name="post_days" value="28" min="7" max="120">
+    </label>
+    <label>匹配窗口(周)
+      <input type="number" id="f-weeks" name="matching_window_weeks" value="4" min="1" max="8">
+    </label>
+    <label>缺失期
+      <select id="f-missing" name="missing_policy">
+        <option value="drop" selected>drop（剔除）</option>
+        <option value="interpolate">interpolate（同星期插补）</option>
+      </select>
+    </label>
+    <label>事件
+      <select id="f-event" name="event_policy">
+        <option value="exclude" selected>exclude（剔除事件日）</option>
+        <option value="include">include（保留）</option>
+      </select>
+    </label>
+    <label>回补数据
+      <select id="f-backfill" name="backfill_policy">
+        <option value="exclude" selected>exclude（剔除）</option>
+        <option value="include">include（保留并标记）</option>
+      </select>
+    </label>
+    <label>口径变化
+      <select id="f-caliber" name="caliber_policy">
+        <option value="adjust" selected>adjust（重叠期换算）</option>
+        <option value="flag_only">flag_only（仅标记）</option>
+      </select>
+    </label>
+    <label>同期对照
+      <select id="f-yoy" name="yoy_control">
+        <option value="true" selected>启用（去年同期）</option>
+        <option value="false">关闭</option>
+      </select>
+    </label>
+    <button type="submit" id="run-btn">运行分析</button>
+  </form>
+  <div class="run-history">
+    <label>历史运行
+      <select id="run-select"><option value="">— 选择历史运行 —</option></select>
+    </label>
+    <span id="run-meta" class="muted"></span>
+  </div>
+</section>
+
+<div id="loading" class="loading" hidden>分析运行中…</div>
+<div id="error" class="error-banner" hidden></div>
+
+<main id="result" hidden>
+
+  <!-- 影响范围总览 -->
+  <section class="card" id="impact-card">
+    <h2>影响范围 <span class="muted" id="impact-metric"></span></h2>
+    <div class="hero-row">
+      <div class="hero">
+        <div class="hero-value" id="hero-point"></div>
+        <div class="hero-label">改版效应（构成调整后）· <span id="hero-verdict"></span></div>
+      </div>
+      <div class="stat-tiles">
+        <div class="tile"><span class="tile-label">95% 置信区间</span><span class="tile-value" id="tile-ci"></span></div>
+        <div class="tile"><span class="tile-label">DiD（剔对照组）</span><span class="tile-value" id="tile-did"></span></div>
+        <div class="tile"><span class="tile-label">剔去年同期后净效应</span><span class="tile-value" id="tile-net"></span></div>
+        <div class="tile"><span class="tile-label">敏感性区间（<span id="tile-nvar"></span> 组参数）</span><span class="tile-value" id="tile-sens"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 验证：时间边界 + 回补数据 -->
+  <section class="card" id="validation-card">
+    <h2>验证</h2>
+    <div class="two-col">
+      <div>
+        <h3>时间边界</h3>
+        <ul class="check-list" id="boundary-checks"></ul>
+      </div>
+      <div>
+        <h3>回补数据</h3>
+        <ul class="check-list" id="backfill-checks"></ul>
+        <div id="backfill-outliers"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 样本流 -->
+  <section class="card" id="flow-card">
+    <h2>样本流</h2>
+    <div id="flow-chart" class="chart"></div>
+    <details class="table-toggle"><summary>表格视图</summary>
+      <table id="flow-table"><thead><tr><th>阶段</th><th>进入</th><th>流出</th><th>剔除</th><th>说明</th></tr></thead><tbody></tbody></table>
+    </details>
+  </section>
+
+  <!-- 趋势 -->
+  <section class="card" id="trend-card">
+    <h2>日指标趋势 <span class="legend" id="trend-legend"></span></h2>
+    <div id="trend-chart" class="chart"></div>
+    <details class="table-toggle"><summary>表格视图</summary>
+      <table id="trend-table"><thead><tr><th>日期</th><th>期间</th><th>处理组</th><th>对照组</th><th>标记</th></tr></thead><tbody></tbody></table>
+    </details>
+  </section>
+
+  <!-- 分层结果 -->
+  <section class="card" id="strata-card">
+    <h2>分层结果与样本构成</h2>
+    <p class="note" id="composition-note"></p>
+    <table id="strata-table">
+      <thead><tr>
+        <th>层</th><th>pre 日均</th><th>post 日均</th><th>效应</th><th>95% CI</th>
+        <th>DiD</th><th>用户份额 pre→post</th><th>构成变化</th>
+      </tr></thead><tbody></tbody>
+    </table>
+  </section>
+
+  <!-- 对照组 -->
+  <section class="card" id="control-card">
+    <h2>对照组</h2>
+    <div class="two-col">
+      <div>
+        <h3>同期对照组（DiD）</h3>
+        <table id="did-table"><tbody></tbody></table>
+      </div>
+      <div>
+        <h3>去年同期对照（YoY）</h3>
+        <table id="yoy-table"><tbody></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 敏感性 -->
+  <section class="card" id="sens-card">
+    <h2>敏感性结果</h2>
+    <p class="note">对匹配窗口、缺失期/事件/回补/口径策略做网格扫描，每个点是一组参数下的效应估计。</p>
+    <div id="sens-chart" class="chart"></div>
+    <details class="table-toggle"><summary>变体明细（<span id="sens-count"></span>）</summary>
+      <table id="sens-table"><thead><tr><th>匹配窗口</th><th>缺失期</th><th>事件</th><th>回补</th><th>口径</th><th>效应</th><th>DiD</th></tr></thead><tbody></tbody></table>
+    </details>
+  </section>
+
+  <!-- 异常事件与口径 -->
+  <section class="card" id="events-card">
+    <h2>异常事件与指标口径</h2>
+    <div class="two-col">
+      <div>
+        <h3>异常事件影响</h3>
+        <table id="events-table"><thead><tr><th>事件</th><th>类型</th><th>窗口</th><th>post 内天数</th><th>超常量估计</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div>
+        <h3>口径变化</h3>
+        <div id="caliber-info"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 证据链 -->
+  <section class="card" id="evidence-card">
+    <h2>证据链</h2>
+    <ol class="evidence-list" id="evidence-list"></ol>
+    <p class="muted" id="run-hashes"></p>
+  </section>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

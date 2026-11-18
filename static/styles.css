@@ -1,0 +1,161 @@
+/* 设计参数来自 dataviz 参考调色板（已验证）：角色化 CSS 变量，亮/暗双模式 */
+:root {
+  --surface-1: #fcfcfb;
+  --page: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6;   /* 处理组 */
+  --series-2: #eb6834;   /* 对照组 */
+  --series-3: #1baf7a;
+  --seq-250: #86b6ef;
+  --seq-350: #5598e7;
+  --seq-450: #2a78d6;
+  --seq-550: #1c5cab;
+  --seq-600: #184f95;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --critical: #d03b3b;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-1: #1a1a19;
+    --page: #0d0d0d;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --gridline: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --seq-250: #104281;
+    --seq-350: #184f95;
+    --seq-450: #3987e5;
+    --seq-550: #5598e7;
+    --seq-600: #6da7ec;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--page);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.page-header { padding: 24px 24px 8px; }
+.page-header h1 { margin: 0; font-size: 22px; }
+.subtitle { margin: 4px 0 0; color: var(--text-secondary); font-size: 13px; }
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 16px 24px;
+  padding: 16px 20px;
+}
+.card h2 { margin: 0 0 12px; font-size: 16px; }
+.card h3 { margin: 0 0 8px; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+.muted { color: var(--text-muted); font-size: 12px; font-weight: 400; }
+.note { color: var(--text-secondary); font-size: 13px; margin: 4px 0 10px; }
+
+/* 参数筛选行：一行，位于所有图表之上 */
+.controls-row {
+  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end;
+}
+.controls-row label, .run-history label {
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.controls-row select, .controls-row input, .run-history select {
+  font: inherit; font-size: 13px; padding: 5px 8px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface-1); color: var(--text-primary);
+}
+#run-btn {
+  font: inherit; font-size: 13px; font-weight: 600;
+  padding: 6px 18px; border: none; border-radius: 6px;
+  background: var(--series-1); color: #fff; cursor: pointer;
+}
+#run-btn:disabled { opacity: 0.5; cursor: wait; }
+.run-history { margin-top: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+.loading { margin: 16px 24px; color: var(--text-secondary); }
+.error-banner {
+  margin: 16px 24px; padding: 10px 14px; border-radius: 6px;
+  background: var(--critical); color: #fff; font-size: 13px;
+}
+
+/* 影响范围 */
+.hero-row { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; }
+.hero-value { font-size: 48px; font-weight: 650; letter-spacing: -0.5px; }
+.hero-label { color: var(--text-secondary); font-size: 13px; }
+.stat-tiles { display: flex; gap: 12px; flex-wrap: wrap; }
+.tile {
+  display: flex; flex-direction: column; gap: 2px;
+  border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; min-width: 150px;
+}
+.tile-label { font-size: 12px; color: var(--text-secondary); }
+.tile-value { font-size: 18px; font-weight: 600; }
+
+/* 验证清单 */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+.check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.check-list li { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.check-icon { font-weight: 700; flex: none; }
+.check-pass .check-icon { color: var(--good); }
+.check-fail .check-icon { color: var(--critical); }
+.check-warn .check-icon { color: var(--warning); }
+.check-detail { color: var(--text-muted); font-size: 12px; }
+.outlier-box {
+  margin-top: 10px; padding: 8px 12px; border-radius: 6px;
+  border: 1px solid var(--critical); font-size: 12px;
+}
+
+/* 表格 */
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--gridline); }
+th { color: var(--text-secondary); font-weight: 600; font-size: 12px; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.table-toggle { margin-top: 10px; font-size: 13px; color: var(--text-secondary); }
+.table-toggle table { margin-top: 8px; }
+.flag-bad { color: var(--critical); font-weight: 600; }
+.flag-ok { color: var(--good); }
+
+/* 图表 */
+.chart { width: 100%; overflow-x: auto; }
+.legend { font-size: 12px; font-weight: 400; color: var(--text-secondary); margin-left: 8px; }
+.legend .key { display: inline-flex; align-items: center; gap: 5px; margin-right: 14px; }
+.legend .swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+svg .grid { stroke: var(--gridline); stroke-width: 1; }
+svg .axis { stroke: var(--baseline); stroke-width: 1; }
+svg text { fill: var(--text-muted); font-size: 11px; font-family: inherit; }
+svg .series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+svg .divider { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 4 3; }
+.tooltip {
+  position: absolute; pointer-events: none; z-index: 10;
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 10px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  display: none; max-width: 260px;
+}
+.tooltip .tt-title { font-weight: 600; margin-bottom: 4px; }
+.tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
+.tooltip .tt-key { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+.tooltip .tt-val { font-weight: 600; margin-left: auto; padding-left: 10px; }
+
+/* 证据链 */
+.evidence-list { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.evidence-list .ev-hash {
+  font-family: ui-monospace, monospace; font-size: 11px; color: var(--text-muted);
+  background: var(--page); border-radius: 4px; padding: 1px 6px; margin-left: 8px;
+}
+.evidence-list .ev-detail { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
